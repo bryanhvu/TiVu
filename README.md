@@ -1,2 +1,3 @@
-# Grocery-Aggregator
-Website that aggregates and sorts specified grocery item prices from their respective retailers.
+# TiVu
+Automated youtube to TV program scheduler
+
