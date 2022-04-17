@@ -8,19 +8,31 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 
-# debug times, change when ready to use
-START_TIME = "00:00:00"
-END_TIME = "00:11:30"
+debug = True
+
+if debug:
+    # debug times, change when ready to use
+    START_TIME = time()
+    END_TIME = START_TIME + 90
+    LOOP_TIME = 30  # sleep time before next while loop iteration
+else:
+    today = datetime.now().strftime("%m-%d-%y")
+    start_hour = "10:00"
+    end_hour = "20:00"
+    # convert times into floats
+    START_TIME = datetime.strptime(f"{today} {start_hour}", "%m-%d-%y %H:%M").timestamp()
+    END_TIME = datetime.strptime(f"{today} {end_hour}", "%m-%d-%y %H:%M").timestamp()
+    LOOP_TIME = 600
+
 SLEEP_TIME = 3  # general sleep time for webdriver actions (replace with event-based sleep)
-LOOP_TIME = 60  # sleep time before next while loop iteration
 browser_active = False
 
 while True:
-    current_time = datetime.now().strftime("%H:%M:%S")
+    current_time = time()
     # run main script if within specified operational time and there isn't an active browser
     if START_TIME <= current_time <= END_TIME and not browser_active:
         browser_active = True
-        #TODO Get environement variables to work
+        #TODO Get environment variables to work
         bearer_headers = {
             # "Authorization": f"Bearer {os.environ['SHEETY_TOKEN']}"
             "Authorization": "Bearer vutube"
@@ -29,7 +41,9 @@ while True:
         try:
             # sheet_endpoint = os.environ["SHEET_ENDPOINT"]
             sheet_endpoint = "https://api.sheety.co/ab5f25ac623f26b2893bcf4dc383176c/dadTvSchedule/schedule"
-            schedule_data = requests.get(sheet_endpoint, header=bearer_headers).json()["schedule"]
+            schedule_data = requests.get(sheet_endpoint, headers=bearer_headers).json()["schedule"]
+            # for testing code to conserve sheety api requests
+            # raise Exception
         except BaseException:
             print("Sheety API call failed. Using default schedule.")
             schedule_data = pd.read_csv("Dad TV Schedule.csv")
@@ -54,7 +68,7 @@ while True:
             search.send_keys(Keys.ENTER)
 
             sleep(SLEEP_TIME)
-            # add some handling for when element doesn't show (maybe already handled with implicitly_wait
+            # TODO add some handling for when element doesn't show (maybe already handled with implicitly_wait
             video_title = driver.find_element(by="link text", value=video)
             hover = ActionChains(driver)
             hover.move_to_element(video_title).perform()
@@ -66,6 +80,7 @@ while True:
         expand_button = driver.find_element(by="css selector", value='button[title="Expand (i)"]')
         expand_button.click()
         sleep(SLEEP_TIME)
+        # TODO add functionality to check if video is currently playing (don't want to accidentally pause video
         play = driver.find_element(by="css selector", value=".ytp-large-play-button")
         play.click()
         fullscreen = driver.find_element(by="css selector", value='button[title="Full screen (f)"]')
@@ -75,3 +90,7 @@ while True:
         browser_active = False
 
     sleep(LOOP_TIME)
+
+# TODO create exception handling for when expected items don't show up
+# e.g. the searched video doesn't exist or can't be found, things aren't loading, etc.
+
